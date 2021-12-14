@@ -54,8 +54,7 @@ tfrt_cc_test(
     srcs = [
         "gpu_types_test.cc",
     ],
-    # Skip ROCm tests by default for now. TODO(csigg): make configurable.
-    args = ["--%s_filter=*CUDA" % if_google("gunit", "gtest")],
+    args = ["--%s_filter=*ROCm" % if_google("gunit", "gtest")],
     tags = [
         "noasan",
         "nomsan",
