@@ -1,0 +1,34 @@
+ARG BASE_IMAGE=rocm/tensorflow-autobuilds:ubuntu18.04-rocm4.5.0
+
+FROM $BASE_IMAGE
+MAINTAINER Deven Desai <deven.desai@amd.com>
+
+ARG BAZEL_VERSION="4.0.0"
+ARG CLANG_VERSION="11"
+ARG GCC_VERSION="8"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN wget -qO - https://repo.radeon.com/rocm/rocm.gpg.key | apt-key add -;
+
+RUN apt-get update -y && apt-get install -y libnuma-dev
+
+ENV LD_LIBRARY_PATH /opt/rocm/hip/lib
+
+COPY install_bazel.sh /install/
+RUN cd /install && ./install_bazel.sh ${BAZEL_VERSION}
+
+COPY install_clang.sh /install/
+RUN cd /install && ./install_clang.sh ${CLANG_VERSION}
+
+COPY install_gcc.sh /install/
+RUN cd /install && ./install_gcc.sh ${GCC_VERSION}
+
+COPY install_pip_packages.sh /install/
+RUN cd /install && ./install_pip_packages.sh
+
+COPY scripts/ /scripts/
+
+ENV HOME /root
+
+
