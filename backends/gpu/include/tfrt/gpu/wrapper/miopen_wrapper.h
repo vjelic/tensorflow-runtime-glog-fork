@@ -25,6 +25,9 @@ namespace tfrt {
 namespace gpu {
 namespace wrapper {
 
+// Placeholder value for math type attributes, which is only supported by cuDNN.
+extern const DnnMathType kRocmDefaultMath;
+
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os, miopenStatus_t status);
 
 template <>
@@ -35,6 +38,11 @@ Expected<miopenConvolutionMode_t> Parse<miopenConvolutionMode_t>(
     llvm::StringRef name);
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os,
                               miopenConvolutionMode_t value);
+template <>
+Expected<miopenActivationMode_t> Parse<miopenActivationMode_t>(
+    llvm::StringRef name);
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os,
+                              miopenActivationMode_t value);
 
 template <>
 struct PlatformTypeTraits<DnnDataTypeTag, miopenDataType_t>
@@ -43,13 +51,16 @@ template <>
 struct PlatformTypeTraits<DnnConvolutionModeTag, miopenConvolutionMode_t>
     : public RocmPlatformType {};
 template <>
+struct PlatformTypeTraits<DnnActivationModeTag, miopenActivationMode_t>
+    : public RocmPlatformType {};
+template <>
 struct PlatformTypeTraits<DnnConvFwdAlgoTag, uint64_t>
     : public RocmPlatformType {};
 template <>
 struct PlatformTypeTraits<DnnConvBwdDataAlgoTag, uint64_t>
     : public RocmPlatformType {};
 template <>
-struct PlatformTypeTraits<DnnConvBwdWeightsAlgoTag, uint64_t>
+struct PlatformTypeTraits<DnnConvBwdFilterAlgoTag, uint64_t>
     : public RocmPlatformType {};
 
 mlir::TypeID GetMiopenDataTypeId(miopenDataType_t data_type);
@@ -181,6 +192,9 @@ llvm::Error MiopenPoolingForward(
     Pointer<const void> beta, const miopenTensorDescriptor_t y_desc,
     Pointer<void> y, bool do_backward, Pointer<void> workspace,
     size_t workspace_size_bytes);
+llvm::Expected<size_t> MiopenPoolingGetWorkSpaceSize(
+    const miopenPoolingDescriptor_t pooling_desc,
+    const miopenTensorDescriptor_t y_desc);
 llvm::Error MiopenPoolingBackward(
     CurrentContext current, miopenHandle_t handle,
     const miopenPoolingDescriptor_t pooling_desc, Pointer<const void> alpha,

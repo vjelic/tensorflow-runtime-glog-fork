@@ -49,6 +49,8 @@ struct TestGpuAsyncConversionPass
   StringRef getArgument() const final { return "test-gpu-async-conversion"; }
 
   void getDependentDialects(DialectRegistry &registry) const override {
+    tfrt::RegisterTFRTDialects(registry);
+    tfrt::RegisterTFRTCompiledDialects(registry);
     registry.insert<tfrt::gpu::GpuDialect, arith::ArithmeticDialect,
                     cf::ControlFlowDialect,
                     tfrt::gpu::conversion::GpuConversionDialect,
@@ -92,6 +94,15 @@ class TestSetEntryPointPass
  public:
   TestSetEntryPointPass() = default;
   TestSetEntryPointPass(const TestSetEntryPointPass &pass) {}
+  void getDependentDialects(DialectRegistry &registry) const override {
+    tfrt::RegisterTFRTDialects(registry);
+    tfrt::RegisterTFRTCompiledDialects(registry);
+    registry.insert<tfrt::gpu::GpuDialect, arith::ArithmeticDialect,
+                    cf::ControlFlowDialect,
+                    tfrt::gpu::conversion::GpuConversionDialect,
+                    gpu::GPUDialect, memref::MemRefDialect, StandardOpsDialect,
+                    tfrt::compiler::TFRTDialect>();
+  }
 
   StringRef getArgument() const final { return "test-set-entry-point"; }
 
@@ -145,5 +156,5 @@ int main(int argc, char **argv) {
   tfrt::gpu::registerPasses();
 
   return mlir::asMainReturnCode(
-      mlir::MlirOptMain(argc, argv, "TFRT pass driver\n", registry, true));
+      mlir::MlirOptMain(argc, argv, "TFRT pass driver\n", registry));
 }
