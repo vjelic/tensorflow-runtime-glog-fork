@@ -34,3 +34,7 @@ for API in "hip" "rocblas" "rocsolver" "miopen" "hipfft"; do
    ./bazel-bin/backends/gpu/tools/stub_codegen/impl_codegen \
        $(dirname $0)/$API.json | clang-format > $(printf $SRC_PATH $API)
 done
+./bazel-bin/backends/gpu/tools/stub_codegen/header_codegen \
+    $(dirname $0)/hiprtc.json | clang-format >> third_party/hip/hip_stub.h.inc 
+./bazel-bin/backends/gpu/tools/stub_codegen/impl_codegen \
+    $(dirname $0)/hiprtc.json | clang-format >> third_party/hip/hip_stub.cc.inc 

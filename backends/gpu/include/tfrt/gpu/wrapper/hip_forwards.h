@@ -60,4 +60,6 @@ using ncclComm_t = struct ncclComm *;
 // Forward declaration of hipFFT types.
 using hipfftHandle = struct hipfftHandle_t *;
 
+// Forward declaration of hipRTC types.
+using hiprtcProgram = struct _hiprtcProgram *;
 #endif  // TFRT_GPU_WRAPPER_HIP_FORWARDS_H_

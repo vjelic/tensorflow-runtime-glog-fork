@@ -32,11 +32,13 @@ typedef enum hipfftLibraryPropertyType_t {
   HIPFFT_PATCH_LEVEL,
 } hipfftLibraryPropertyType;
 
+HIPFFT_EXPORT hipfftResult hipfftCreate(hipfftHandle* plan);
+
 HIPFFT_EXPORT hipfftResult hipfftMakePlanMany64(
     hipfftHandle plan, int rank, long long int* n, long long int* inembed,
     long long int istride, long long int idist, long long int* onembed,
     long long int ostride, long long int odist, hipfftType type,
-    long long int batch, size_t* work_size);
+    long long int batch, size_t* workSize);
 
 HIPFFT_EXPORT hipfftResult hipfftGetSize(hipfftHandle plan, size_t* workSize);
 
@@ -68,8 +70,6 @@ HIPFFT_EXPORT hipfftResult hipfftExecZ2D(hipfftHandle plan,
 
 HIPFFT_EXPORT hipfftResult hipfftSetStream(hipfftHandle plan,
                                            hipStream_t stream);
-
-HIPFFT_EXPORT hipfftResult hipfftCreate(hipfftHandle* plan);
 
 HIPFFT_EXPORT hipfftResult hipfftDestroy(hipfftHandle plan);
 

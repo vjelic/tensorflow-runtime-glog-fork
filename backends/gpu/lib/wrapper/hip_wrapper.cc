@@ -20,6 +20,7 @@
 #include "llvm/Support/FormatVariadic.h"
 #include "tfrt/gpu/wrapper/hip_stub.h"
 #include "wrapper_detail.h"
+#include "tfrt/support/logging.h"
 
 namespace tfrt {
 namespace gpu {
@@ -33,6 +34,12 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& os, hipError_t error) {
     os << llvm::formatv("hipError_t({0})", static_cast<int>(error));
   }
   msg = hipGetErrorString(error);
+  if (msg != nullptr) os << " (" << msg << ")";
+  return os;
+}
+
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, hiprtcResult result) {
+  const char* msg = hiprtcGetErrorString(result);
   if (msg != nullptr) os << " (" << msg << ")";
   return os;
 }
@@ -421,12 +428,15 @@ llvm::Error HipMemHostFree(Pointer<void> pointer) {
 }
 
 llvm::Expected<RegisteredMemory<void>> HipMemHostRegister(
-    CurrentContext current, void* ptr, size_t size_bytes,
+    CurrentContext current, void* host_ptr, size_t size_bytes,
     hipHostRegisterFlags_t flags) {
   CheckHipContext(current);
-  RETURN_IF_ERROR(hipHostRegister(ptr, size_bytes, flags));
-  NotifyResourceCreated(ResourceType::kRegisteredMemory, ptr);
-  return RegisteredMemory<void>({ptr, Platform::ROCm});
+  RETURN_IF_ERROR(hipHostRegister(host_ptr, size_bytes, flags));
+  hipDeviceptr_t device_ptr;
+  RETURN_IF_ERROR(
+      hipHostGetDevicePointer(&device_ptr, host_ptr, /*flags=*/0));
+  NotifyResourceCreated(ResourceType::kRegisteredMemory, host_ptr);
+  return RegisteredMemory<void>({device_ptr, Platform::ROCm});
 }
 
 llvm::Error HipMemHostUnregister(Pointer<void> pointer) {
@@ -540,6 +550,46 @@ llvm::Expected<OwningModule> HipModuleLoadData(CurrentContext current,
   return OwningModule(module);
 }
 
+llvm::Expected<OwningModule> HipRTCModuleLoadData(CurrentContext current,
+                                                  const void* image) {
+  CheckHipContext(current);
+  hiprtcProgram prog;
+  //auto img = reinterpret_cast<const char*>(const_cast<void*>(image));
+  auto kernel = static_cast<const char*>(image);
+  std::string kname(kernel);
+  kname += ".cu";
+  RETURN_IF_ERROR(hiprtcCreateProgram(&prog,
+                                      kernel,
+                                      kname.c_str(),
+                                      0,
+                                      nullptr,
+                                      nullptr
+                                     ));
+  hiprtcResult compileResult = hiprtcCompileProgram(prog, 0, nullptr);
+  if (compileResult != HIPRTC_SUCCESS) { 
+    size_t logSize;
+    hiprtcGetProgramLogSize(prog, &logSize);
+    if (logSize) {
+      std::string log(logSize, '\0');
+      hiprtcGetProgramLog(prog, &log[0]);
+      MakeStringError(log.c_str());
+    }
+  }
+
+  size_t code_size;
+  RETURN_IF_ERROR(hiprtcGetCodeSize(prog, &code_size));
+  std::vector<char> code(code_size);
+  RETURN_IF_ERROR(hiprtcGetCode(prog, code.data()));
+  RETURN_IF_ERROR(hiprtcDestroyProgram(&prog));
+  
+  hipModule_t module;
+  RETURN_IF_ERROR(hipModuleLoadData(&module, code.data()));
+  
+  NotifyResourceCreated(ResourceType::kModule, module);
+  return OwningModule(module);
+}
+
+// TODO: add a wrapper API of HipRTCModuleLoadDataEx 
 llvm::Expected<OwningModule> HipModuleLoadDataEx(
     CurrentContext current, const void* image,
     llvm::ArrayRef<hipJitOption> options, llvm::ArrayRef<void*> option_values) {

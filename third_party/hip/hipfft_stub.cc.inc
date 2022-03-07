@@ -1,3 +1,8 @@
+HIPFFT_EXPORT hipfftResult hipfftCreate(hipfftHandle* plan) {
+  return DynamicCall<decltype(hipfftCreate), &hipfftCreate>("hipfftCreate",
+                                                            plan);
+}
+
 HIPFFT_EXPORT hipfftResult hipfftMakePlanMany64(
     hipfftHandle plan, int rank, long long int* n, long long int* inembed,
     long long int istride, long long int idist, long long int* onembed,
@@ -65,11 +70,6 @@ HIPFFT_EXPORT hipfftResult hipfftSetStream(hipfftHandle plan,
                                            hipStream_t stream) {
   return DynamicCall<decltype(hipfftSetStream), &hipfftSetStream>(
       "hipfftSetStream", plan, stream);
-}
-
-HIPFFT_EXPORT hipfftResult hipfftCreate(hipfftHandle* plan) {
-  return DynamicCall<decltype(hipfftCreate), &hipfftCreate>("hipfftCreate",
-                                                            plan);
 }
 
 HIPFFT_EXPORT hipfftResult hipfftDestroy(hipfftHandle plan) {

@@ -23,5 +23,5 @@
       "hipfftMakePlanMany64",
       "hipfftSetStream",
       "hipfftSetWorkArea"
-   ],
+   ]
 }

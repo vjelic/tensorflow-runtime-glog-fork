@@ -29,6 +29,7 @@ namespace gpu {
 namespace wrapper {
 
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os, hipError_t error);
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, hiprtcResult result);
 
 // The following functions map directly to HIP calls.
 //
@@ -145,6 +146,8 @@ llvm::Error HipMemsetD32Async(CurrentContext current, Pointer<void> dst,
 
 llvm::Expected<OwningModule> HipModuleLoadData(CurrentContext current,
                                                const void* image);
+llvm::Expected<OwningModule> HipRTCModuleLoadData(CurrentContext current,
+                                                  const void* image);
 llvm::Expected<OwningModule> HipModuleLoadDataEx(
     CurrentContext current, const void* image,
     llvm::ArrayRef<hipJitOption> options, llvm::ArrayRef<void*> option_values);
