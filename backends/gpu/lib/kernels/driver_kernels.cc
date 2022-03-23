@@ -235,7 +235,7 @@ static Expected<GpuBuffer> GpuMemRegister(
   auto size = (*buffer)->size();
   auto memory = wrapper::MemHostRegister(*current, (*buffer)->data(), size);
   if (!memory) return memory.takeError();
-  auto pointer = memory->get();
+  auto pointer = wrapper::MemHostGetDevicePointer(memory->get());
 
   // The allocator unregisters the pointer on destruction and then releases
   // the references to the context and the host buffer.
@@ -243,7 +243,7 @@ static Expected<GpuBuffer> GpuMemRegister(
       std::tuple<RCReference<HostBuffer>, AsyncValueRef<GpuContext>,
                  wrapper::RegisteredMemory<void>>>;
   auto allocator = MakeAvailableAsyncValueRef<Allocator>(
-      pointer,
+      *pointer,
       std::make_tuple(*buffer, context.ValueRef(), std::move(*memory)));
   return GpuBuffer::Allocate(std::move(allocator), size);
 }
